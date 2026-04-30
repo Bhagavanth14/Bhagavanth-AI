@@ -8,7 +8,7 @@ st.title("🤖 Bhagavanth AI Assistant")
 # --- 2. INITIALIZE AI CLIENT & CHAT ---
 # We use 'session_state' so the AI memory doesn't reset on every click
 if "chat_session" not in st.session_state:
-    client = genai.Client(api_key=st.secrets.toml["AIzaSyA2maYnZeZ9dlr0A0vrdxUDnrwkvLkXtpU"])
+    client = genai.Client(api_key=st.secrets["Google-API-Key"])
     # This replaces your 'chat = client.chats.create' line
     st.session_state.chat_session = client.chats.create(model="gemini-2.5-flash")
     # This stores the visible message history for the UI
