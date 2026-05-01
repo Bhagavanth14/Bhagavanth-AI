@@ -34,7 +34,7 @@ st.title("🤖Bhagavanth AI Assistant")
 if "client" not in st.session_state:
     # Replace with your actual API Key
     st.session_state.client = genai.Client(api_key=st.secrets["Google-API-Key"])
-    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-3-flash")
+    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.5-flash")
     st.session_state.messages = []
 
 # --- 3. SIDEBAR NAVIGATION MENU ---
