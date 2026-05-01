@@ -31,7 +31,7 @@ st.title("🤖 AI Assistant & 📊Custom Grapher")
 
 if "client" not in st.session_state:
     # Use your actual key here or st.secrets for deployment
-    st.session_state.client = genai.Client(api_key=st.secrets[Google-API-Key])
+    st.session_state.client = genai.Client(api_key=st.secrets["Google-API-Key"])
     st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.5-flash")
     st.session_state.messages = []
 
