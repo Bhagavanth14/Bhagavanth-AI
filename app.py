@@ -100,40 +100,44 @@ with tool_col2:
     )
 
 prompt = st.chat_input("Ask here...")
-
 # --- 7. PROCESSING THE INPUT ---
 audio_prompt = audio['bytes'] if audio else None
 
-# 1. INITIALIZE VARIABLES HERE FIRST
+# Initialize variables to avoid NameErrors
 user_parts = []
 display_text = "" 
 
-# Now run your logic
 if prompt or audio_prompt or uploaded_files:
+    # 1. Handle Text
     if prompt:
-        user_parts.append(prompt)
+        user_parts.append(types.Part.from_text(text=prompt))
         display_text += prompt
     
+    # 2. Handle Audio
     if audio_prompt:
-        user_parts.append({"mime_type": "audio/wav", "data": audio_prompt})
+        user_parts.append(types.Part.from_bytes(data=audio_prompt, mime_type="audio/wav"))
         display_text += " 🎤 _[Voice Command]_ "
 
+    # 3. Handle Files (Images, PDFs, etc.)
     if uploaded_files:
         for f in uploaded_files:
-            user_parts.append({"mime_type": f.type, "data": f.getvalue()})
+            # Use from_bytes to wrap the file data correctly
+            user_parts.append(types.Part.from_bytes(data=f.getvalue(), mime_type=f.type))
         display_text += f" 📎 _[{len(uploaded_files)} Attachment(s)]_"
 
-    # Now this line won't crash because display_text is defined above!
+    # Save to session state for the UI
     st.session_state.messages.append({"role": "user", "content": display_text})
     
     with st.chat_message("user"):
         st.markdown(display_text)
 
     try:
-        # Use the version without 'content=' as we discussed
+        # Send the list of Part objects to the model
         response = st.session_state.chat_session.send_message(user_parts)
+        
         st.session_state.messages.append({"role": "assistant", "content": response.text})
         with st.chat_message("assistant"):
             st.markdown(response.text)
     except Exception as e:
         st.error(f"AI Connection Error: {e}")
+
