@@ -107,27 +107,33 @@ if prompt or audio_prompt or uploaded_files:
     user_parts = []
     display_text = ""
 
+    # 1. Handle Text
     if prompt:
         user_parts.append(prompt)
         display_text += prompt
     
+    # 2. Handle Audio
     if audio_prompt:
         user_parts.append({"mime_type": "audio/wav", "data": audio_prompt})
         display_text += " 🎤 _[Voice Command]_ "
 
+    # 3. Handle Files
     if uploaded_files:
         for f in uploaded_files:
-            bytes_data = f.read()
+            # Re-read bytes to ensure fresh data
+            bytes_data = f.getvalue() 
             user_parts.append({"mime_type": f.type, "data": bytes_data})
         display_text += f" 📎 _[{len(uploaded_files)} Attachment(s)]_"
 
-    # Update state and display
+    # Update UI
     st.session_state.messages.append({"role": "user", "content": display_text})
     with st.chat_message("user"):
         st.markdown(display_text)
 
     try:
-        response = st.session_state.chat_session.send_message(user_parts)
+        # FIX: Ensure user_parts is sent correctly as the content of the message
+        response = st.session_state.chat_session.send_message(content=user_parts)
+        
         st.session_state.messages.append({"role": "assistant", "content": response.text})
         with st.chat_message("assistant"):
             st.markdown(response.text)
