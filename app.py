@@ -95,14 +95,12 @@ if menu_selection == "🎨 Image Generator" and 'submitted_image' in locals() an
     else:
         with st.spinner("Creating your masterpiece..."):
             try:
-                # Use generate_content with a native image model
-                # gemini-3.1-flash-image-preview is the standard for 2026 native generation
+                # Use the native image generation model
                 response = st.session_state.client.models.generate_content(
                     model="gemini-3.1-flash-image-preview",
                     contents=[image_prompt]
                 )
                 
-                # The model returns images as inline_data parts
                 found_image = False
                 for part in response.candidates[0].content.parts:
                     if part.inline_data:
@@ -114,7 +112,12 @@ if menu_selection == "🎨 Image Generator" and 'submitted_image' in locals() an
                     st.warning("The model responded, but no image was found. Try a different prompt.")
 
             except Exception as e:
-                st.error(f"Image Generation Error: {e}")
+                # --- THIS IS THE PART YOU ADD ---
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    st.error("🚦 **Quota Reached:** You've hit the limit for free image generation. Please wait about 60 seconds and try again, or check your daily limits in AI Studio.")
+                else:
+                    st.error(f"Image Generation Error: {e}")
+                # --------------------------------
 
 # --- 7. MULTIMODAL INPUT LOGOS (ATTACHMENTS) ---
 st.write("---")
