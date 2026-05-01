@@ -2,6 +2,7 @@ import streamlit as st
 from google import genai
 import matplotlib.pyplot as plt
 from streamlit_mic_recorder import mic_recorder
+from google.genai import types 
 
 # --- 1. GRAPH FUNCTIONS ---
 def line(x, y, xlab, ylab, tit):
@@ -103,28 +104,24 @@ prompt = st.chat_input("Ask here...")
 # --- 7. PROCESSING THE INPUT ---
 audio_prompt = audio['bytes'] if audio else None
 
+
+
+# Inside your Section 7 logic
 if prompt or audio_prompt or uploaded_files:
-    user_parts = []
-    display_text = ""
+    formatted_parts = []
 
-    # 1. Handle Text
     if prompt:
-        user_parts.append(prompt)
-        display_text += prompt
+        formatted_parts.append(types.Part.from_text(text=prompt))
     
-    # 2. Handle Audio
     if audio_prompt:
-        user_parts.append({"mime_type": "audio/wav", "data": audio_prompt})
-        display_text += " 🎤 _[Voice Command]_ "
+        formatted_parts.append(types.Part.from_bytes(data=audio_prompt, mime_type="audio/wav"))
 
-    # 3. Handle Files
     if uploaded_files:
         for f in uploaded_files:
-            # Re-read bytes to ensure fresh data
-            bytes_data = f.getvalue() 
-            user_parts.append({"mime_type": f.type, "data": bytes_data})
-        display_text += f" 📎 _[{len(uploaded_files)} Attachment(s)]_"
+            formatted_parts.append(types.Part.from_bytes(data=f.getvalue(), mime_type=f.type))
 
+    # Then send the list of Part objects
+    response = st.session_state.chat_session.send_message(formatted_parts)
     # Update UI
     st.session_state.messages.append({"role": "user", "content": display_text})
     with st.chat_message("user"):
