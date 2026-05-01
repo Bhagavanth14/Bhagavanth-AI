@@ -104,33 +104,34 @@ prompt = st.chat_input("Ask here...")
 # --- 7. PROCESSING THE INPUT ---
 audio_prompt = audio['bytes'] if audio else None
 
+# 1. INITIALIZE VARIABLES HERE FIRST
+user_parts = []
+display_text = "" 
 
-
-# Inside your Section 7 logic
+# Now run your logic
 if prompt or audio_prompt or uploaded_files:
-    formatted_parts = []
-
     if prompt:
-        formatted_parts.append(types.Part.from_text(text=prompt))
+        user_parts.append(prompt)
+        display_text += prompt
     
     if audio_prompt:
-        formatted_parts.append(types.Part.from_bytes(data=audio_prompt, mime_type="audio/wav"))
+        user_parts.append({"mime_type": "audio/wav", "data": audio_prompt})
+        display_text += " 🎤 _[Voice Command]_ "
 
     if uploaded_files:
         for f in uploaded_files:
-            formatted_parts.append(types.Part.from_bytes(data=f.getvalue(), mime_type=f.type))
+            user_parts.append({"mime_type": f.type, "data": f.getvalue()})
+        display_text += f" 📎 _[{len(uploaded_files)} Attachment(s)]_"
 
-    # Then send the list of Part objects
-    response = st.session_state.chat_session.send_message(formatted_parts)
-    # Update UI
+    # Now this line won't crash because display_text is defined above!
     st.session_state.messages.append({"role": "user", "content": display_text})
+    
     with st.chat_message("user"):
         st.markdown(display_text)
 
     try:
-        # FIX: Ensure user_parts is sent correctly as the content of the message
-        response = st.session_state.chat_session.send_message(content=user_parts)
-        
+        # Use the version without 'content=' as we discussed
+        response = st.session_state.chat_session.send_message(user_parts)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
         with st.chat_message("assistant"):
             st.markdown(response.text)
