@@ -25,46 +25,49 @@ def barsy(x, y, xlab, tit):
     ax.set_title(tit)
     st.pyplot(fig)
 
-# --- 2. APP SETUP ---
-st.set_page_config(page_title="Bhagavanth AI", layout="centered")
-st.title("🤖 AI Assistant & 📊Custom Grapher")
+# --- 2. APP SETUP (Auto-expands the sidebar) ---
+st.set_page_config(
+    page_title="Bhagavanth AI", 
+    layout="centered",
+    initial_sidebar_state="expanded"  # This makes the sidebar start OPEN
+)
+st.title("🤖Bhagavanth AI Assistant &📊 Custom Grapher")
 
 if "client" not in st.session_state:
-    # Use your actual key here or st.secrets for deployment
     st.session_state.client = genai.Client(api_key=st.secrets["Google-API-Key"])
     st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.5-flash")
     st.session_state.messages = []
 
-# --- 3. SIDEBAR INPUT FORM ---
+# --- 3. SIDEBAR GRAPH PANEL ---
 with st.sidebar:
-    st.header("📋 Graph Configuration")
-    # Empty default values (None or "") 
+    st.header("📈 Graph Data Panel") # Renamed for clarity
+    st.write("---")
     with st.form("graph_form"):
-        input_labels = st.text_input("Enter Labels (comma separated)", value="", placeholder="e.g. LED, Strip, Bulb")
-        input_values = st.text_input("Enter Values (comma separated)", value="", placeholder="e.g. 50, 120, 80")
-        graph_title = st.text_input("Graph Title", value="", placeholder="e.g. May Sales Report")
-        graph_type = st.selectbox("Choose Graph Type", ["Line Chart", "Vertical Bar", "Horizontal Bar"])
+        st.subheader("Input your values:")
+        input_labels = st.text_input("Labels", value="", placeholder="e.g. Mon, Tue, Wed")
+        input_values = st.text_input("Values", value="", placeholder="e.g. 10, 20, 30")
+        graph_title = st.text_input("Title", value="", placeholder="e.g. Weekly Sales")
+        graph_type = st.selectbox("Type", ["Line Chart", "Vertical Bar", "Horizontal Bar"])
         
         submitted = st.form_submit_button("Generate Graph")
 
-# --- 4. UI DISPLAY (CHAT HISTORY) ---
+# --- 4. CHAT HISTORY ---
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 5. GRAPH LOGIC & SIDEBAR INDICATOR ---
+# --- 5. GRAPH LOGIC & SIDEBAR NUDGE ---
 if submitted:
-    # Check if inputs are empty
     if not input_labels or not input_values:
-        st.info("👈 **Please enter your data in the sidebar to visualize it.**")
-        st.sidebar.warning("Fill these fields first!")
+        # Visual indicator pointing to the Graph sidebar
+        st.error("👈 **Please enter data in the 'Graph Data Panel' to continue.**")
     else:
         labels = [i.strip() for i in input_labels.split(",") if i.strip()]
         try:
             values = [float(i.strip()) for i in input_values.split(",") if i.strip()]
             
             if len(labels) == len(values) and len(labels) > 0:
-                st.write(f"### {graph_title if graph_title else 'Data Visualization'}")
+                st.write(f"### {graph_title if graph_title else 'Graph Visualization'}")
                 if graph_type == "Line Chart":
                     line(labels, values, "Items", "Values", graph_title)
                 elif graph_type == "Vertical Bar":
@@ -72,11 +75,11 @@ if submitted:
                 else:
                     barsy(labels, values, "Values", graph_title)
             else:
-                st.error("⚠️ The number of labels and values must match!")
+                st.error("⚠️ Label count must match Value count!")
         except ValueError:
-            st.error("⚠️ Make sure the values are numbers separated by commas.")
+            st.error("⚠️ Values must be numbers!")
 
-# --- 6. AI CHAT INPUT ---
+# --- 6. AI CHAT ---
 if prompt := st.chat_input("Ask me anything..."):
     with st.chat_message("user"):
         st.markdown(prompt)
