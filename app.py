@@ -93,21 +93,26 @@ if menu_selection == "🎨 Image Generator" and 'submitted_image' in locals() an
     if not image_prompt:
         st.error("Please enter a description for the image.")
     else:
-        with st.spinner("Generating image..."):
+        with st.spinner("Creating your masterpiece..."):
             try:
-                # Use the Imagen model for image generation
-                response = st.session_state.client.models.generate_image(
-                    model='imagen-3.0-generate-001',
-                    prompt=image_prompt,
-                    config=types.GenerateImageConfig(
-                        aspect_ratio=aspect_ratio,
-                        number_of_images=1
-                    )
+                # Use generate_content with a native image model
+                # gemini-3.1-flash-image-preview is the standard for 2026 native generation
+                response = st.session_state.client.models.generate_content(
+                    model="gemini-3.1-flash-image-preview",
+                    contents=[image_prompt]
                 )
-                # Display the result
-                generated_image = response.generated_images[0]
-                st.image(generated_image.image_bytes, caption=image_prompt)
-                st.success("Image generated successfully!")
+                
+                # The model returns images as inline_data parts
+                found_image = False
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data:
+                        st.image(part.inline_data.data, caption=f"Generated: {image_prompt}")
+                        found_image = True
+                        st.success("Image generated successfully!")
+                
+                if not found_image:
+                    st.warning("The model responded, but no image was found. Try a different prompt.")
+
             except Exception as e:
                 st.error(f"Image Generation Error: {e}")
 
