@@ -27,7 +27,7 @@ def barsy(x, y, xlab, tit):
 
 # --- 2. APP SETUP ---
 st.set_page_config(page_title="Bhagavanth AI", layout="centered")
-st.title("🤖Bhagavanth AI Assistant & Custom Grapher")
+st.title("🤖 Bhagavanth AI Assistant & Custom Grapher")
 
 if "client" not in st.session_state:
     st.session_state.client = genai.Client(api_key="YOUR_API_KEY")
