@@ -32,16 +32,16 @@ st.set_page_config(page_title="Bhagavanth AI", layout="centered", initial_sideba
 st.title("🤖Bhagavanth AI Assistant")
 
 if "client" not in st.session_state:
-    # Replace with your actual API Key
+    # Ensure your secret key is set in .streamlit/secrets.toml
     st.session_state.client = genai.Client(api_key=st.secrets["Google-API-Key"])
-    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.5-flash")
+    # Using gemini-2.0-flash or later for multimodal capabilities
+    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.0-flash")
     st.session_state.messages = []
 
 # --- 3. SIDEBAR NAVIGATION MENU ---
 with st.sidebar:
     st.header("🛠️ Main Menu")
-    # This acts as your toggle menu
-    menu_selection = st.selectbox("Select Panel", ["📈 Graph Data Panel", "📜 Chat History"])
+    menu_selection = st.selectbox("Select Panel", ["📈 Graph Data Panel", "🎨 Image Generator", "📜 Chat History"])
     st.write("---")
 
     if menu_selection == "📈 Graph Data Panel":
@@ -51,15 +51,20 @@ with st.sidebar:
             input_values = st.text_input("Values", placeholder="e.g. 10, 20, 30")
             graph_title = st.text_input("Title", placeholder="e.g. Weekly Sales")
             graph_type = st.selectbox("Type", ["Line Chart", "Vertical Bar", "Horizontal Bar"])
-            submitted = st.form_submit_button("Generate Graph")
+            submitted_graph = st.form_submit_button("Generate Graph")
     
+    elif menu_selection == "🎨 Image Generator":
+        st.subheader("AI Image Creation")
+        image_prompt = st.text_area("Describe the image you want:", placeholder="A futuristic city with neon lights...")
+        aspect_ratio = st.selectbox("Aspect Ratio", ["1:1", "16:9", "4:3"])
+        submitted_image = st.button("Generate Image")
+
     elif menu_selection == "📜 Chat History":
         st.subheader("Recent Conversation")
         if not st.session_state.messages:
             st.info("No history yet.")
         for msg in st.session_state.messages:
             role_icon = "👤" if msg["role"] == "user" else "🤖"
-            # Show a snippet of the history in the sidebar
             st.write(f"{role_icon} **{msg['role'].capitalize()}**: {msg['content'][:50]}...")
 
 # --- 4. MAIN CHAT DISPLAY ---
@@ -68,7 +73,7 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # --- 5. GRAPH GENERATION LOGIC ---
-if menu_selection == "📈 Graph Data Panel" and submitted:
+if menu_selection == "📈 Graph Data Panel" and 'submitted_graph' in locals() and submitted_graph:
     if not input_labels or not input_values:
         st.error("Please enter data to generate the graph.")
     else:
@@ -83,9 +88,31 @@ if menu_selection == "📈 Graph Data Panel" and submitted:
             else: st.error("⚠️ Label count must match Value count!")
         except ValueError: st.error("⚠️ Values must be numbers!")
 
-# --- 6. MULTIMODAL INPUT LOGOS (ATTACHMENTS) ---
+# --- 6. IMAGE GENERATION LOGIC ---
+if menu_selection == "🎨 Image Generator" and 'submitted_image' in locals() and submitted_image:
+    if not image_prompt:
+        st.error("Please enter a description for the image.")
+    else:
+        with st.spinner("Generating image..."):
+            try:
+                # Use the Imagen model for image generation
+                response = st.session_state.client.models.generate_image(
+                    model='imagen-3.0-generate-001',
+                    prompt=image_prompt,
+                    config=types.GenerateImageConfig(
+                        aspect_ratio=aspect_ratio,
+                        number_of_images=1
+                    )
+                )
+                # Display the result
+                generated_image = response.generated_images[0]
+                st.image(generated_image.image_bytes, caption=image_prompt)
+                st.success("Image generated successfully!")
+            except Exception as e:
+                st.error(f"Image Generation Error: {e}")
+
+# --- 7. MULTIMODAL INPUT LOGOS (ATTACHMENTS) ---
 st.write("---")
-# Positioning the logos right above the text input
 tool_col1, tool_col2, _ = st.columns([0.1, 0.4, 0.5])
 
 with tool_col1:
@@ -100,41 +127,31 @@ with tool_col2:
     )
 
 prompt = st.chat_input("Ask here...")
-# --- 7. PROCESSING THE INPUT ---
-audio_prompt = audio['bytes'] if audio else None
 
-# Initialize variables to avoid NameErrors
-user_parts = []
-display_text = "" 
-
-if prompt or audio_prompt or uploaded_files:
-    # 1. Handle Text
+# --- 8. PROCESSING THE CHAT INPUT ---
+if prompt or audio or uploaded_files:
+    user_parts = []
+    display_text = "" 
+    
     if prompt:
         user_parts.append(types.Part.from_text(text=prompt))
         display_text += prompt
     
-    # 2. Handle Audio
-    if audio_prompt:
-        user_parts.append(types.Part.from_bytes(data=audio_prompt, mime_type="audio/wav"))
+    if audio:
+        user_parts.append(types.Part.from_bytes(data=audio['bytes'], mime_type="audio/wav"))
         display_text += " 🎤 _[Voice Command]_ "
 
-    # 3. Handle Files (Images, PDFs, etc.)
     if uploaded_files:
         for f in uploaded_files:
-            # Use from_bytes to wrap the file data correctly
             user_parts.append(types.Part.from_bytes(data=f.getvalue(), mime_type=f.type))
         display_text += f" 📎 _[{len(uploaded_files)} Attachment(s)]_"
 
-    # Save to session state for the UI
     st.session_state.messages.append({"role": "user", "content": display_text})
-    
     with st.chat_message("user"):
         st.markdown(display_text)
 
     try:
-        # Send the list of Part objects to the model
         response = st.session_state.chat_session.send_message(user_parts)
-        
         st.session_state.messages.append({"role": "assistant", "content": response.text})
         with st.chat_message("assistant"):
             st.markdown(response.text)
