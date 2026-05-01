@@ -97,7 +97,7 @@ if menu_selection == "🎨 Image Generator" and 'submitted_image' in locals() an
             try:
                 # Use the native image generation model
                 response = st.session_state.client.models.generate_content(
-                    model="gemini-3-flash",
+                    model="gemini-3.1-flash-image-preview",
                     contents=[image_prompt]
                 )
                 
