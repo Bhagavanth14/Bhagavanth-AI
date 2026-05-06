@@ -35,7 +35,7 @@ if "client" not in st.session_state:
     # Ensure your secret key is set in .streamlit/secrets.toml
     st.session_state.client = genai.Client(api_key=st.secrets["Google-API-Key"])
     # Using gemini-2.0-flash or later for multimodal capabilities
-    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.0-flash")
+    st.session_state.chat_session = st.session_state.client.chats.create(model="gemini-2.5-flash")
     st.session_state.messages = []
 
 # --- 3. SIDEBAR NAVIGATION MENU ---
